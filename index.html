@@ -130,6 +130,18 @@ body.theme-contrast{--bg:#10191a;--panel:#192b2b;--panel2:#213333;--line:#507067
 @media(max-width:800px){.credit-section{grid-template-columns:1fr}}
 @media(max-width:520px){.credit-cards{grid-template-columns:1fr}.credit-bar-row{grid-template-columns:1fr 1fr 72px}}
 @media(prefers-reduced-motion:reduce){.auth-spinner{animation:none}}
+
+/* GeoGovern v6 — data-only FGDB archive exports */
+.fgdb-panel{margin:18px 0;background:var(--panel);border:1px solid #567067;border-radius:14px;overflow:hidden}
+.fgdb-head{padding:17px 19px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.fgdb-head h2{font-size:17px;margin:0}.fgdb-head p{font-size:12px;color:var(--muted);margin:4px 0 0}
+.fgdb-body{padding:16px 19px;display:grid;gap:12px}.fgdb-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.fgdb-queue{max-height:340px;overflow:auto;border:1px solid var(--line);border-radius:9px}
+.fgdb-row{padding:11px 12px;display:grid;grid-template-columns:minmax(160px,2fr) minmax(120px,1fr) minmax(180px,1fr);gap:12px;align-items:center;border-bottom:1px solid var(--line);font-size:12px}
+.fgdb-row:last-child{border-bottom:none}.fgdb-row small{display:block;color:var(--muted)}.fgdb-row strong{overflow-wrap:anywhere}
+.fgdb-status{color:var(--muted)}.fgdb-status.done{color:#acdbc1}.fgdb-status.failed{color:#edaaa5}
+.fgdb-row a{color:#b0d8d0}.fgdb-controls{display:flex;flex-wrap:wrap;gap:8px}
+@media(max-width:650px){.fgdb-row{grid-template-columns:1fr}}
 </style>
 <script src="https://js.arcgis.com/4.34/"></script>
 </head><body><header><div class="mark"><div class="logo">M</div><div><h1>GeoGovern <span class="product-by">by Morphum</span></h1><p>ArcGIS Content Intelligence · Dependencies · Archival Safety · Bulk Governance</p></div></div><div class="header-right"><div id="account">Not connected · Review & manage</div><button class="btn slim theme-btn" id="themeBtn" title="Toggle contrast">◐ Contrast</button><button class="btn slim" id="settingsBtn" title="Connection settings">⚙ Connection</button></div></header>
@@ -186,6 +198,16 @@ body.theme-contrast{--bg:#10191a;--panel:#192b2b;--panel2:#213333;--line:#507067
 <div class="workspace"><section class="panel"><div class="panel-head"><h2>Content library</h2><div><button class="btn slim" id="csv">Export CSV</button> <button class="btn slim" id="json">Export JSON</button> <button class="btn slim" id="importBtn">Import snapshot</button><input id="file" type="file" accept=".json,application/json"></div></div><div class="panel-body"><div class="filters"><input id="search" placeholder="Search title, ID, owner…" aria-label="Search items"><select id="type"><option value="">All item types</option></select><select id="folder"><option value="">All folders</option></select><select id="source"><option value="">All source types</option></select><select id="statusFilter" aria-label="Filter by AGOL status"><option value="">All content statuses</option><option value="deprecated">Deprecated</option><option value="notdeprecated">Not deprecated</option><option value="authoritative">Authoritative</option></select><select id="riskFilter" aria-label="Filter by archive risk"><option value="">All archive findings</option><option value="conflict">Deprecated with non-deprecated consumers</option><option value="affected">Not-deprecated item relying on deprecated</option><option value="depchain">Deprecated, only deprecated downstream</option><option value="unlinked">Deprecated, no consumers detected</option></select><select id="sort"><option value="direct">Most referenced</option><option value="downstream">Most downstream</option><option value="title">Title A–Z</option><option value="modified">Recently modified</option><option value="credit">Highest estimated storage credits</option></select></div><div class="selection-toolbar"><div><strong id="selectedCount">0 selected</strong><span class="tiny"> · check individual rows or select displayed items</span></div><div><button class="btn slim" id="selectFiltered">Select first 100 filtered</button> <button class="btn slim" id="clearSelected">Clear selection</button> <button class="btn slim primary" id="openBulk">Bulk management ↓</button></div></div><div class="tiny" id="count">0 results</div></div><div class="table-scroll"><table><thead><tr><th class="check-col"><input type="checkbox" class="row-check" id="checkVisible" aria-label="Select visible filtered items" title="Select displayed items"></th><th>Item</th><th>Type / source / owner / folder</th><th class="num">Direct</th><th class="num">All ↓</th></tr></thead><tbody id="rows"></tbody></table></div></section>
 <section class="panel"><div class="panel-head"><h2>Relationship explorer</h2><span class="tiny">Select a row or graph node</span></div><div id="graph" class="relation-view" aria-label="Directional dependency relationships"></div><div class="source-legend">Data classification uses ArcGIS item type and type keywords. Referenced services are not necessarily real-time feeds; only Feed and Stream Service items are labelled as feeds.</div><div class="legend"><strong>Direction:</strong> <span style="color:#77adff">Uses these →</span> Selected item <span style="color:#59c7b9">→ Used by these</span>. Click any card to navigate. Indirect consumers are listed below.</div><div class="panel-body detail" id="detail"><div class="empty">Select an item to inspect its dependencies.</div></div></section></div>
 
+
+<section class="fgdb-panel" id="fgdbPanel" aria-label="Bulk file geodatabase exports">
+ <div class="fgdb-head"><div><h2>Archive export · File Geodatabase (FGDB)</h2><p>Export selected ArcGIS-hosted feature services as individual FGDB ZIP files. Data export only — no dependency report or changes to source content.</p></div><span class="tag">Export only</span></div>
+ <div class="fgdb-body">
+  <div class="fgdb-actions"><button class="btn primary" id="fgdbPrepare">Review selected services</button><button class="btn" id="fgdbRun" disabled>Create FGDB exports</button><button class="btn" id="fgdbCancel" disabled>Stop after current export</button><button class="btn" id="fgdbLog" disabled>Download export results CSV</button></div>
+  <div class="tiny" id="fgdbMessage">Select hosted feature services in the Content library, then choose Review selected services. Export permission is required; source layers remain unchanged.</div>
+  <div class="fgdb-queue" id="fgdbQueue"><div class="fgdb-row"><span class="tiny">No services queued.</span></div></div>
+  <p class="tiny">Each export creates a temporary File Geodatabase item in ArcGIS Online. Select <b>Download FGDB</b> for each completed export; files are not bundled into one ZIP. Exported items remain in AGOL until you remove them manually and may incur storage credits. Large exports, attachments and organisation permissions can affect availability. Verify your downloaded files before deleting any source data.</p>
+ </div>
+</section>
 <section class="admin-panel" id="adminPanel"><div class="admin-head"><div><h2>Bulk content management</h2><p>Choose items in the Content library, preview changes, and explicitly confirm before writing to ArcGIS Online.</p></div><span class="mode-pill" id="adminMode">Read-only until signed in</span></div><div class="admin-body"><div class="admin-body-grid"><div class="admin-form"><div class="field"><label for="bulkAction">Bulk action</label><select id="bulkAction"><option value="move">Move selected items to folder</option><option value="tags">Edit tags</option><option value="snippet">Set summary</option><option value="description">Set description</option><option value="title">Add prefix/suffix to title</option><option value="deprecated">Mark as Deprecated</option><option value="clearstatus">Clear content status (remove badge)</option><option value="protect">Enable delete protection</option><option value="unprotect">Disable delete protection</option></select></div><div class="field hidden-conditional" id="bulkFolderWrap"><label for="bulkFolder">Destination folder (your own account)</label><select id="bulkFolder"><option value="/">Root folder</option></select><span class="tiny">Moving a layer does not change its item ID or service URL. Only your own items are supported.</span></div><div class="field hidden-conditional" hidden id="bulkTagWrap"><label for="bulkTagMode">Tag action</label><select id="bulkTagMode"><option value="append">Append tags (preserve existing)</option><option value="remove">Remove matching tags</option><option value="replace">Replace all tags</option></select><label for="bulkTags">Comma-separated tags</label><input id="bulkTags" placeholder="e.g. Safe Networks, Archived"/></div><div class="field hidden-conditional" hidden id="bulkTextWrap"><label id="bulkTextLabel" for="bulkText">Text to apply</label><textarea id="bulkText" placeholder="Enter new text"></textarea><span class="tiny" id="bulkTextHelp">Applied to every selected item.</span></div><div class="field hidden-conditional" hidden id="bulkTitleWrap"><label for="bulkTitleMode">Title change</label><select id="bulkTitleMode"><option value="prefix">Prefix</option><option value="suffix">Suffix</option></select><input id="bulkTitleText" placeholder="e.g. ARCHIVE - "/></div><div class="admin-actions"><button class="btn primary" id="previewBulk">Preview changes</button><button class="btn" id="exportAudit" disabled>Export result log</button></div><div class="admin-note warning">No writes occur until you preview, acknowledge the impact and type the confirmation phrase. This release excludes deletion, unsharing and owner transfers.</div></div><div><div class="impact-stat" id="bulkImpact"><strong>No pending changes</strong><div class="tiny">Select some owned items and click Preview changes.</div></div><h3 style="font-size:13px;margin:13px 0 6px">Change preview</h3><div class="admin-preview" id="bulkPreview">Nothing queued.</div><div class="confirm-wrap" id="bulkConfirm" hidden><label style="display:flex;align-items:center;gap:9px"><input id="bulkAcknowledged" type="checkbox">I have reviewed the item list and dependency impact.</label><label class="tiny" for="bulkPhrase">Type APPLY to authorise these changes</label><input id="bulkPhrase" autocomplete="off" placeholder="APPLY"/><button class="btn primary" id="bulkApply" disabled>Apply changes to ArcGIS Online</button></div><h3 style="font-size:13px;margin:13px 0 6px">Operation results</h3><div class="admin-results" id="bulkResults"><span class="tiny">No operations run in this session.</span></div></div></div></div></section>
 <div class="help"><details><summary>How the scan works, limitations, and secure deployment</summary><p>Searches accessible ArcGIS portal items, then reads JSON definitions for web maps, web scenes, applications, dashboards and other JSON-backed items. It detects references by 32-character ArcGIS item IDs and matches service URLs to loaded layers. Counts are calculated only across the loaded inventory. A partial scan can undercount. REST access permissions limit results; organisation searches are not equivalent to all content unless your role permits access. Some app configurations, external REST URLs, FME integrations, embedded content and runtime-generated references cannot be fully detected. Direct links and transitive downstream links are shown separately; loops are handled.</p><p>For live use, host the HTML at an HTTPS URL and register the URL in an ArcGIS OAuth application. The application uses the ArcGIS Maps SDK IdentityManager (OAuth 2.0) and fetches JSON through the portal sharing REST API; only explicitly confirmed management operations write to ArcGIS item metadata, status, protection or folder. No layer data edits are made. Client ID is not secret; do not embed client secrets. Only use on a trusted host. Browser privacy extensions, cross-origin policies, or organisation security policies may affect sign-in or certain item reads. CSV/JSON downloads and imports remain local to your browser; management actions require a live sign-in and items you own.</p><p>For large organisations, the search API is capped at 10,000 items per search. Split very large inventories by owner/date or run a backend Python audit. This standalone viewer limits live downloads to 10,000 and concurrent definition reads to four. Review no-reference candidates manually before archiving.</p></details></div></main>
 <script>
@@ -523,6 +545,90 @@ async function applyChanges(){
 function exportAudit(){if(!bulkAudit.length)return;const fields=['time','portal','id','title','action','outcome','detail'];download('geogovern-bulk-results-'+new Date().toISOString().slice(0,10)+'.csv',[fields.map(escCSV).join(','),...bulkAudit.map(o=>fields.map(k=>escCSV(o[k])).join(','))].join('\r\n'),'text/csv;charset=utf-8')}
 $('checkVisible').onchange=e=>selectMany((state.filteredIds||[]).slice(0,100),e.target.checked);
 $('selectFiltered').onclick=()=>selectMany((state.filteredIds||[]).slice(0,100),true);
+
+// FGDB-only export queue. No content status, sharing, deletion or dependency writes.
+let fgdbJobs=[],fgdbRunning=false,fgdbStop=false;
+const fgdbEligible=i=>i&&/^(Feature Service|Feature Layer)$/i.test(String(i.type||''))&&sourceType(i).key==='hosted'&&!(/view service/i.test((i.typeKeywords||[]).join(' ')));
+function fgdbRow(job){
+ let action='';
+ if(job.exportId&&job.status==='ready') action='<button class="btn slim" data-fgdb-download="'+escapeHTML(job.exportId)+'">Download FGDB</button>';
+ if(job.exportId)action+=' <a target="_blank" rel="noopener noreferrer" href="'+escapeHTML(state.portal.replace(/\/$/,'')+'/home/item.html?id='+job.exportId)+'">Export item ↗</a>';
+ return '<div class="fgdb-row"><div><strong>'+escapeHTML(job.title)+'</strong><small>'+escapeHTML(job.id)+'</small></div><span class="fgdb-status '+(job.status==='ready'?'done':job.status==='failed'?'failed':'')+'">'+escapeHTML(job.message||job.status)+'</span><div class="fgdb-controls">'+action+'</div></div>';
+}
+function renderFgdb(){ $('fgdbQueue').innerHTML=fgdbJobs.length?fgdbJobs.map(fgdbRow).join(''):'<div class="fgdb-row"><span>No services queued.</span></div>';
+ $('fgdbRun').disabled=fgdbRunning||!fgdbJobs.length||!state.credential||!['mine','org'].includes(state.scope)||fgdbJobs.every(x=>x.status!=='queued');
+ $('fgdbCancel').disabled=!fgdbRunning;
+ $('fgdbLog').disabled=!fgdbJobs.length;
+}
+function fgdbMessage(message){$('fgdbMessage').textContent=message;}
+function prepareFgdb(){
+ if(fgdbRunning)return;
+ fgdbJobs=[];
+ if(!state.credential||!['mine','org'].includes(state.scope)){fgdbMessage('Sign in and load your live ArcGIS inventory before exporting. Demo and snapshots cannot create exports.');renderFgdb();return}
+ const picked=selectedItems();if(!picked.length){fgdbMessage('Select feature services in the Content library first.');renderFgdb();return}
+ if(picked.length>50){fgdbMessage('Please select no more than 50 services per export batch.');return}
+ const unsupported=picked.filter(i=>!fgdbEligible(i));
+ const valid=picked.filter(fgdbEligible);
+ fgdbJobs=valid.map(i=>({id:i.id,title:i.title,owner:i.owner,status:'queued',message:'Ready to export',exportId:null,jobId:null}));
+ fgdbMessage(fgdbJobs.length+' eligible hosted feature service(s) queued. '+unsupported.length+' selected item(s) excluded (not confirmed hosted feature services). Click Create FGDB exports to begin.');renderFgdb();
+}
+async function fgdbStatus(job){
+ if(!job.jobId)return true;
+ for(let attempt=0;attempt<60;attempt++){
+  if(fgdbStop)return false;
+  try{
+   const x=await request('content/users/'+encodeURIComponent(job.owner)+'/items/'+encodeURIComponent(job.id)+'/status',{jobType:'export',jobId:job.jobId});
+   const val=String(x.status||'').toLowerCase();
+   if(['completed','success','succeeded'].includes(val))return true;
+   if(['failed','error'].includes(val))throw Error(x.statusMessage||'Export job failed');
+   job.message='Preparing FGDB ('+(attempt+1)+'/60 checks)';renderFgdb();
+  }catch(err){
+   // Older portals may not support an export status read; retained export item remains downloadable via AGOL.
+   if(attempt>=2){job.message='Export created; check export item status in AGOL';job.status='check';renderFgdb();return false}
+  }
+  await new Promise(r=>setTimeout(r,2000));
+ }
+ job.message='Status timed out; check the export item in AGOL';job.status='check';return false;
+}
+async function runFgdb(){
+ if(fgdbRunning||!state.credential||!['mine','org'].includes(state.scope))return;
+ fgdbRunning=true;fgdbStop=false;renderFgdb();
+ for(const job of fgdbJobs.filter(x=>x.status==='queued')){
+  if(fgdbStop)break;
+  job.status='running';job.message='Requesting FGDB export…';renderFgdb();
+  try{
+   const safeTitle=('GeoGovern_Archive_'+job.title).replace(/[^a-zA-Z0-9_ -]/g,'_').slice(0,80)+'_'+job.id.slice(0,8);
+   const created=await request('content/users/'+encodeURIComponent(job.owner)+'/export',{itemId:job.id,title:safeTitle,exportFormat:'file geodatabase'});
+   if(!created.exportItemId)throw Error('ArcGIS did not return an export item ID');
+   job.exportId=created.exportItemId;job.jobId=created.jobId||null;
+   job.message='Export requested; checking status…';renderFgdb();
+   const ready=await fgdbStatus(job);
+   if(ready){job.status='ready';job.message='Export created — ready to download';}
+  }catch(e){job.status='failed';job.message=e.message||String(e)}
+  renderFgdb();
+ }
+ fgdbRunning=false;
+ fgdbMessage(fgdbStop?'Stopped. Created exports remain available below.':'Export queue finished. Download each FGDB and verify the archive before deleting source data.');renderFgdb();
+}
+function downloadFgdb(id){
+ const job=fgdbJobs.find(j=>j.exportId===id);
+ if(!job||job.status!=='ready'||!state.credential)return;
+ // Use a transient URL only when the user explicitly clicks Download, never save credentials or tokens in an export log.
+ const u=state.portal.replace(/\/$/,'')+'/sharing/rest/content/items/'+encodeURIComponent(id)+'/data?token='+encodeURIComponent(state.credential.token);
+ const link=document.createElement('a');link.href=u;link.target='_blank';link.rel='noopener noreferrer';document.body.append(link);link.click();link.remove();
+ job.message='Download opened — verify the ZIP was saved';renderFgdb();
+}
+function exportFgdbLog(){
+ const keys=['source_item_id','title','owner','status','export_item_id','message'];
+ const data=fgdbJobs.map(j=>[j.id,j.title,j.owner,j.status,j.exportId||'',j.message||'']);
+ download('geogovern-fgdb-export-log-'+new Date().toISOString().slice(0,10)+'.csv',[keys.map(escCSV).join(','),...data.map(row=>row.map(escCSV).join(','))].join('\r\n'),'text/csv;charset=utf-8');
+}
+$('fgdbPrepare').onclick=prepareFgdb;
+$('fgdbRun').onclick=runFgdb;
+$('fgdbCancel').onclick=()=>{fgdbStop=true;fgdbMessage('Stopping after the current export request…')};
+$('fgdbLog').onclick=exportFgdbLog;
+$('fgdbQueue').addEventListener('click',e=>{const b=e.target.closest('[data-fgdb-download]');if(b)downloadFgdb(b.dataset.fgdbDownload)});
+
 $('clearSelected').onclick=()=>selectMany([...bulkSelected],false);
 $('openBulk').onclick=()=>$('adminPanel').scrollIntoView({behavior:'smooth',block:'start'});
 $('bulkAction').onchange=actionFields;
