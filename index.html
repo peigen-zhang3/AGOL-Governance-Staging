@@ -131,14 +131,14 @@ body.theme-contrast{--bg:#10191a;--panel:#192b2b;--panel2:#213333;--line:#507067
 @media(max-width:520px){.credit-cards{grid-template-columns:1fr}.credit-bar-row{grid-template-columns:1fr 1fr 72px}}
 @media(prefers-reduced-motion:reduce){.auth-spinner{animation:none}}
 
-/* GeoGovern v6 — data-only FGDB archive exports */
+/* GeoGovern v9 — data-only FGDB archive exports and local bulk downloads */
 .fgdb-panel{margin:18px 0;background:var(--panel);border:1px solid #567067;border-radius:14px;overflow:hidden}
 .fgdb-head{padding:17px 19px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
 .fgdb-head h2{font-size:17px;margin:0}.fgdb-head p{font-size:12px;color:var(--muted);margin:4px 0 0}
 .fgdb-body{padding:16px 19px;display:grid;gap:12px}.fgdb-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .fgdb-queue{max-height:340px;overflow:auto;border:1px solid var(--line);border-radius:9px}
 .fgdb-row{padding:11px 12px;display:grid;grid-template-columns:minmax(160px,2fr) minmax(120px,1fr) minmax(180px,1fr);gap:12px;align-items:center;border-bottom:1px solid var(--line);font-size:12px}
-.fgdb-row:last-child{border-bottom:none}.fgdb-row small{display:block;color:var(--muted)}.fgdb-row strong{overflow-wrap:anywhere}
+.fgdb-row input[type="checkbox"]{accent-color:#70bda0;margin-right:8px}.fgdb-row:last-child{border-bottom:none}.fgdb-row small{display:block;color:var(--muted)}.fgdb-row strong{overflow-wrap:anywhere}
 .fgdb-status{color:var(--muted)}.fgdb-status.done{color:#acdbc1}.fgdb-status.failed{color:#edaaa5}
 .fgdb-row a{color:#b0d8d0}.fgdb-controls{display:flex;flex-wrap:wrap;gap:8px}
 @media(max-width:650px){.fgdb-row{grid-template-columns:1fr}}
@@ -216,12 +216,14 @@ body.theme-contrast{--bg:#10191a;--panel:#192b2b;--panel2:#213333;--line:#507067
 
 
 <section class="fgdb-panel" id="fgdbPanel" aria-label="Bulk file geodatabase exports">
- <div class="fgdb-head"><div><h2>Archive export · File Geodatabase (FGDB)</h2><p>Export selected ArcGIS-hosted feature services as individual FGDB ZIP files. Data export only — no dependency report or changes to source content.</p></div><span class="tag">Export only</span></div>
+ <div class="fgdb-head"><div><h2>Archive export · File Geodatabase (FGDB)</h2><p>Export selected hosted feature services as FGDB items into the same AGOL folder as their source. No source data, deprecation or dependency changes.</p></div><span class="tag">Export only</span></div>
  <div class="fgdb-body">
-  <div class="fgdb-actions"><button class="btn primary" id="fgdbPrepare">Review selected services</button><button class="btn" id="fgdbRun" disabled>Create FGDB exports</button><button class="btn" id="fgdbCancel" disabled>Stop after current export</button><button class="btn" id="fgdbLog" disabled>Download export results CSV</button></div>
+  <div class="fgdb-actions"><button class="btn primary" id="fgdbPrepare">Review selected services</button><button class="btn" id="fgdbRun" disabled>Create FGDB exports</button><button class="btn" id="fgdbCancel" disabled>Stop after current export</button><button class="btn" id="fgdbLog" disabled>Download export results CSV</button><button class="btn primary" id="fgdbLocal" disabled>Download selected FGDBs locally</button><button class="btn" id="fgdbLocalStop" disabled>Stop downloads</button></div>
   <div class="tiny" id="fgdbMessage">Select hosted feature services in the Content library, then choose Review selected services. Export permission is required; source layers remain unchanged.</div>
+  <div class="tiny" id="fgdbLocalMessage">Choose completed FGDBs below, then click Download selected FGDBs locally. Chrome/Edge can save directly to a folder of your choice. Other browsers may ask to allow multiple downloads.</div>
+  <div class="fgdb-actions"><label class="tiny"><input type="checkbox" id="fgdbSelectAll"> Select all downloadable FGDBs</label></div>
   <div class="fgdb-queue" id="fgdbQueue"><div class="fgdb-row"><span class="tiny">No services queued.</span></div></div>
-  <p class="tiny">Each export creates a temporary File Geodatabase item in ArcGIS Online. Select <b>Download FGDB</b> for each completed export; files are not bundled into one ZIP. Exported items remain in AGOL until you remove them manually and may incur storage credits. Large exports, attachments and organisation permissions can affect availability. Verify your downloaded files before deleting any source data.</p>
+  <p class="tiny">Each export creates a new File Geodatabase item in the <b>same AGOL folder as its source layer</b> (including the owner’s root, where applicable). Naming: <b>Source Layer Title_Archive Export_SourceID8</b> (first 8 characters of original item ID). Existing matching names are flagged for review, not overwritten. Only the item owner or a default ArcGIS administrator can export and move items. These FGDBs remain in AGOL and may incur storage credits; verify actual data before deleting any source layer.</p>
  </div>
 </section>
 <section class="admin-panel" id="adminPanel"><div class="admin-head"><div><h2>Bulk content management</h2><p>Choose items in the Content library, preview changes, and explicitly confirm before writing to ArcGIS Online.</p></div><span class="mode-pill" id="adminMode">Read-only until signed in</span></div><div class="admin-body"><div class="admin-body-grid"><div class="admin-form"><div class="field"><label for="bulkAction">Bulk action</label><select id="bulkAction"><option value="move">Move selected items to folder</option><option value="tags">Edit tags</option><option value="snippet">Set summary</option><option value="description">Set description</option><option value="title">Add prefix/suffix to title</option><option value="deprecated">Mark as Deprecated</option><option value="clearstatus">Clear content status (remove badge)</option><option value="protect">Enable delete protection</option><option value="unprotect">Disable delete protection</option></select></div><div class="field hidden-conditional" id="bulkFolderWrap"><label for="bulkFolder">Destination folder (your own account)</label><select id="bulkFolder"><option value="/">Root folder</option></select><span class="tiny">Moving a layer does not change its item ID or service URL. Only your own items are supported.</span></div><div class="field hidden-conditional" hidden id="bulkTagWrap"><label for="bulkTagMode">Tag action</label><select id="bulkTagMode"><option value="append">Append tags (preserve existing)</option><option value="remove">Remove matching tags</option><option value="replace">Replace all tags</option></select><label for="bulkTags">Comma-separated tags</label><input id="bulkTags" placeholder="e.g. Safe Networks, Archived"/></div><div class="field hidden-conditional" hidden id="bulkTextWrap"><label id="bulkTextLabel" for="bulkText">Text to apply</label><textarea id="bulkText" placeholder="Enter new text"></textarea><span class="tiny" id="bulkTextHelp">Applied to every selected item.</span></div><div class="field hidden-conditional" hidden id="bulkTitleWrap"><label for="bulkTitleMode">Title change</label><select id="bulkTitleMode"><option value="prefix">Prefix</option><option value="suffix">Suffix</option></select><input id="bulkTitleText" placeholder="e.g. ARCHIVE - "/></div><div class="admin-actions"><button class="btn primary" id="previewBulk">Preview changes</button><button class="btn" id="exportAudit" disabled>Export result log</button></div><div class="admin-note warning">No writes occur until you preview, acknowledge the impact and type the confirmation phrase. This release excludes deletion, unsharing and owner transfers.</div></div><div><div class="impact-stat" id="bulkImpact"><strong>No pending changes</strong><div class="tiny">Select some owned items and click Preview changes.</div></div><h3 style="font-size:13px;margin:13px 0 6px">Change preview</h3><div class="admin-preview" id="bulkPreview">Nothing queued.</div><div class="confirm-wrap" id="bulkConfirm" hidden><label style="display:flex;align-items:center;gap:9px"><input id="bulkAcknowledged" type="checkbox">I have reviewed the item list and dependency impact.</label><label class="tiny" for="bulkPhrase">Type APPLY to authorise these changes</label><input id="bulkPhrase" autocomplete="off" placeholder="APPLY"/><button class="btn primary" id="bulkApply" disabled>Apply changes to ArcGIS Online</button></div><h3 style="font-size:13px;margin:13px 0 6px">Operation results</h3><div class="admin-results" id="bulkResults"><span class="tiny">No operations run in this session.</span></div></div></div></div></section>
@@ -626,31 +628,71 @@ function exportAudit(){if(!bulkAudit.length)return;const fields=['time','portal'
 $('checkVisible').onchange=e=>selectMany((state.filteredIds||[]).slice(0,100),e.target.checked);
 $('selectFiltered').onclick=()=>selectMany((state.filteredIds||[]).slice(0,100),true);
 
-// FGDB-only export queue. No content status, sharing, deletion or dependency writes.
-let fgdbJobs=[],fgdbRunning=false,fgdbStop=false;
+// FGDB-only export queue. Source feature services are never changed.
+let fgdbJobs=[],fgdbRunning=false,fgdbStop=false,fgdbDownloading=false,fgdbDownloadStop=false;
 const fgdbEligible=i=>i&&/^(Feature Service|Feature Layer)$/i.test(String(i.type||''))&&sourceType(i).key==='hosted'&&!(/view service/i.test((i.typeKeywords||[]).join(' ')));
+const archiveName=(title,id)=>String(title||'Unnamed layer').replace(/[\\/\u0000-\u001f]/g,' ').trim().slice(0,155)+'_Archive Export_'+String(id||'').slice(0,8);
+const ownerContentPath=(owner,folder)=>'content/users/'+encodeURIComponent(owner)+(folder&&folder!=='/'?'/'+encodeURIComponent(folder):'');
+const folderListings=new Map();
+// Full, paginated folder listing; no assumption that another owner's folder is root.
+async function listOwnerFolder(owner,folder){
+ const key=owner.toLowerCase()+'|'+(folder||'/');if(folderListings.has(key))return folderListings.get(key);
+ let result=[],start=1,rounds=0;
+ do{const data=await request(ownerContentPath(owner,folder),{start:String(start),num:'100'});
+  result.push(...(data.items||[]));start=data.nextStart||-1;
+  if(++rounds>150)throw Error('Folder listing too large to verify safely');
+ }while(start>0);
+ folderListings.set(key,result);return result;
+}
+async function lookupSourceFolder(job){
+ // For the current owner we have IDs mapped from the inventory scan.
+ if(job.owner===state.user&&job.sourceFolderKnown)return {id:job.sourceFolder||'/',label:job.sourceFolderLabel||'Root'};
+ const details=await request('content/items/'+encodeURIComponent(job.id));
+ // ownerFolder is returned in some portal/item-detail responses, not all.
+ if(Object.prototype.hasOwnProperty.call(details,'ownerFolder')){
+  const id=details.ownerFolder||'/';return {id,label:job.sourceFolderLabel|| (id==='/'?'Root':id)};
+ }
+ const userData=await request('content/users/'+encodeURIComponent(job.owner));
+ const folderList=userData.folders||[];
+ // Search root and owner folders. This also verifies which folder truly holds the original item.
+ const root=await listOwnerFolder(job.owner,'/');
+ if(root.some(x=>x.id===job.id))return {id:'/',label:'Root'};
+ for(const folder of folderList){
+  const contents=await listOwnerFolder(job.owner,folder.id);
+  if(contents.some(x=>x.id===job.id))return {id:folder.id,label:folder.title};
+ }
+ throw Error('Cannot verify the source folder for this item. Export skipped to prevent misfiling.');
+}
 function fgdbRow(job){
  let action='';
- if(job.exportId&&job.status==='ready') action='<button class="btn slim" data-fgdb-download="'+escapeHTML(job.exportId)+'">Download FGDB</button>';
- if(job.exportId)action+=' <a target="_blank" rel="noopener noreferrer" href="'+escapeHTML(state.portal.replace(/\/$/,'')+'/home/item.html?id='+job.exportId)+'">Export item ↗</a>';
- return '<div class="fgdb-row"><div><strong>'+escapeHTML(job.title)+'</strong><small>'+escapeHTML(job.id)+'</small></div><span class="fgdb-status '+(job.status==='ready'?'done':job.status==='failed'?'failed':'')+'">'+escapeHTML(job.message||job.status)+'</span><div class="fgdb-controls">'+action+'</div></div>';
+ const downloadable=!!job.exportId&&['saved','existing','downloaded'].includes(job.status);
+ const check='<label title="Select for local FGDB download"><input type="checkbox" data-fgdb-check="'+escapeHTML(job.id)+'" '+(job.localSelected?'checked ':'')+(downloadable&&!fgdbDownloading?'':'disabled ')+'> Local</label>'; 
+ if(downloadable)action='<button class="btn slim" data-fgdb-download="'+escapeHTML(job.exportId)+'" '+(fgdbDownloading?'disabled':'')+'>Download this FGDB</button>'; 
+ if(job.exportId)action+=' <a target="_blank" rel="noopener noreferrer" href="'+escapeHTML(state.portal.replace(/\/$/,'')+'/home/item.html?id='+job.exportId)+'">View FGDB in AGOL ↗</a>';
+ return '<div class="fgdb-row"><div><strong>'+escapeHTML(job.title)+'</strong><small>'+escapeHTML(job.exportTitle||archiveName(job.title,job.id))+' · '+escapeHTML(job.sourceFolderLabel||'Folder unverified')+'</small></div><span class="fgdb-status '+(job.status==='saved'?'done':job.status==='failed'?'failed':'')+'">'+escapeHTML(job.message||job.status)+(job.localStatus?' · Local: '+escapeHTML(job.localStatus):'')+'</span><div class="fgdb-controls">'+check+action+'</div></div>';
 }
 function renderFgdb(){ $('fgdbQueue').innerHTML=fgdbJobs.length?fgdbJobs.map(fgdbRow).join(''):'<div class="fgdb-row"><span>No services queued.</span></div>';
  $('fgdbRun').disabled=fgdbRunning||!fgdbJobs.length||!state.credential||!['mine','org'].includes(state.scope)||fgdbJobs.every(x=>x.status!=='queued');
  $('fgdbCancel').disabled=!fgdbRunning;
  $('fgdbLog').disabled=!fgdbJobs.length;
+ const available=fgdbJobs.filter(j=>j.exportId&&['saved','existing','downloaded'].includes(j.status));
+ $('fgdbLocal').disabled=fgdbRunning||fgdbDownloading||!state.credential||!available.some(j=>j.localSelected);
+ $('fgdbLocalStop').disabled=!fgdbDownloading;
+ $('fgdbSelectAll').disabled=fgdbDownloading||!available.length;
+ $('fgdbSelectAll').checked=available.length>0&&available.every(j=>j.localSelected);
+ $('fgdbSelectAll').indeterminate=available.some(j=>j.localSelected)&&!available.every(j=>j.localSelected);
 }
 function fgdbMessage(message){$('fgdbMessage').textContent=message;}
 function prepareFgdb(){
  if(fgdbRunning)return;
- fgdbJobs=[];
+ fgdbJobs=[];folderListings.clear();
  if(!state.credential||!['mine','org'].includes(state.scope)){fgdbMessage('Sign in and load your live ArcGIS inventory before exporting. Demo and snapshots cannot create exports.');renderFgdb();return}
  const picked=selectedItems();if(!picked.length){fgdbMessage('Select feature services in the Content library first.');renderFgdb();return}
  if(picked.length>50){fgdbMessage('Please select no more than 50 services per export batch.');return}
  const unsupported=picked.filter(i=>!fgdbEligible(i));
  const valid=picked.filter(fgdbEligible);
- fgdbJobs=valid.map(i=>({id:i.id,title:i.title,owner:i.owner,status:'queued',message:'Ready to export',exportId:null,jobId:null}));
- fgdbMessage(fgdbJobs.length+' eligible hosted feature service(s) queued. '+unsupported.length+' selected item(s) excluded (not confirmed hosted feature services). Click Create FGDB exports to begin.');renderFgdb();
+ fgdbJobs=valid.map(i=>({id:i.id,title:i.title,owner:i.owner,sourceFolder:i.ownerFolder||null,sourceFolderKnown:i.owner===state.user&&i.folderName!=='Unknown / not exposed',sourceFolderLabel:i.folderName||'',exportTitle:archiveName(i.title,i.id),status:'queued',message:'Ready to check folder and export',exportId:null,jobId:null,localSelected:false,localStatus:'not downloaded'}));
+ fgdbMessage(fgdbJobs.length+' hosted feature service(s) queued. '+unsupported.length+' selected item(s) excluded. Each FGDB will be saved to the source owner’s AGOL folder.');renderFgdb();
 }
 async function fgdbStatus(job){
  if(!job.jobId)return true;
@@ -662,52 +704,149 @@ async function fgdbStatus(job){
    if(['completed','success','succeeded'].includes(val))return true;
    if(['failed','error'].includes(val))throw Error(x.statusMessage||'Export job failed');
    job.message='Preparing FGDB ('+(attempt+1)+'/60 checks)';renderFgdb();
-  }catch(err){
-   // Older portals may not support an export status read; retained export item remains downloadable via AGOL.
-   if(attempt>=2){job.message='Export created; check export item status in AGOL';job.status='check';renderFgdb();return false}
-  }
+  }catch(err){if(attempt>=2){job.message='Export status unverified; inspect FGDB in AGOL';job.status='check';renderFgdb();return false}}
   await new Promise(r=>setTimeout(r,2000));
  }
- job.message='Status timed out; check the export item in AGOL';job.status='check';return false;
+ job.message='Export timed out; check the FGDB in AGOL';job.status='check';return false;
+}
+async function verifyInFolder(job){
+ folderListings.delete(job.owner.toLowerCase()+'|'+(job.sourceFolder||'/'));
+ const results=await listOwnerFolder(job.owner,job.sourceFolder||'/');
+ const found=results.find(x=>x.id===job.exportId);
+ if(!found)throw Error('FGDB was created but is not visible in the source folder; inspect export item.');
+ if(found.type!=='File Geodatabase')throw Error('Item in folder is not reported as a File Geodatabase.');
+ return found;
 }
 async function runFgdb(){
  if(fgdbRunning||!state.credential||!['mine','org'].includes(state.scope))return;
  fgdbRunning=true;fgdbStop=false;renderFgdb();
  for(const job of fgdbJobs.filter(x=>x.status==='queued')){
   if(fgdbStop)break;
-  job.status='running';job.message='Requesting FGDB export…';renderFgdb();
+  job.status='running';job.message='Verifying source folder…';renderFgdb();
   try{
-   const safeTitle=('GeoGovern_Archive_'+job.title).replace(/[^a-zA-Z0-9_ -]/g,'_').slice(0,80)+'_'+job.id.slice(0,8);
-   const created=await request('content/users/'+encodeURIComponent(job.owner)+'/export',{itemId:job.id,title:safeTitle,exportFormat:'file geodatabase'});
+   const folder=await lookupSourceFolder(job);
+   job.sourceFolder=folder.id;job.sourceFolderLabel=folder.label;
+   const existing=await listOwnerFolder(job.owner,folder.id);
+   const match=existing.find(x=>x.type==='File Geodatabase'&&x.title===job.exportTitle);
+   if(match){job.status='existing';job.exportId=match.id;job.message='Matching FGDB name exists in source folder — select for download after review';job.localSelected=true;renderFgdb();continue}
+   job.message='Requesting FGDB export…';renderFgdb();
+   const created=await request('content/users/'+encodeURIComponent(job.owner)+'/export',{itemId:job.id,title:job.exportTitle,exportFormat:'file geodatabase'});
    if(!created.exportItemId)throw Error('ArcGIS did not return an export item ID');
    job.exportId=created.exportItemId;job.jobId=created.jobId||null;
    job.message='Export requested; checking status…';renderFgdb();
-   const ready=await fgdbStatus(job);
-   if(ready){job.status='ready';job.message='Export created — ready to download';}
-  }catch(e){job.status='failed';job.message=e.message||String(e)}
+   const ready=await fgdbStatus(job);if(!ready)continue;
+   job.message='Moving FGDB into original source folder…';renderFgdb();
+   const moved=await request('content/users/'+encodeURIComponent(job.owner)+'/moveItems',{items:job.exportId,folder:job.sourceFolder||'/'});
+   const entry=(moved.results||[]).find(x=>x.itemId===job.exportId);
+   if(!entry?.success)throw Error('FGDB created, but move failed: '+(entry?.error?.message||'No successful move response'));
+   const item=await verifyInFolder(job);
+   job.status='saved';job.localSelected=true;job.message='Saved in '+job.sourceFolderLabel+' · '+(Number(item.size)>0?'Size '+formatSize(item.size):'Size not reported; verify content');
+  }catch(e){job.status=job.exportId?'check':'failed';job.message=(job.exportId?'Export exists; folder save not verified: ':'')+(e.message||String(e))}
   renderFgdb();
  }
  fgdbRunning=false;
- fgdbMessage(fgdbStop?'Stopped. Created exports remain available below.':'Export queue finished. Download each FGDB and verify the archive before deleting source data.');renderFgdb();
+ fgdbMessage(fgdbStop?'Stopped after current operation. Review remaining unsaved jobs.':'Export queue finished. Review Saved, Already exists and Needs review rows before considering deletion.');renderFgdb();
 }
-function downloadFgdb(id){
- const job=fgdbJobs.find(j=>j.exportId===id);
- if(!job||job.status!=='ready'||!state.credential)return;
- // Use a transient URL only when the user explicitly clicks Download, never save credentials or tokens in an export log.
- const u=state.portal.replace(/\/$/,'')+'/sharing/rest/content/items/'+encodeURIComponent(id)+'/data?token='+encodeURIComponent(state.credential.token);
- const link=document.createElement('a');link.href=u;link.target='_blank';link.rel='noopener noreferrer';document.body.append(link);link.click();link.remove();
- job.message='Download opened — verify the ZIP was saved';renderFgdb();
+// ArcGIS item data is a GET endpoint. Use an Authorization header, never token-in-URL.
+// Folder picker returns a directory handle within a user gesture. Stream each ZIP to disk
+// to avoid loading large geodatabases into browser memory. Browser fallback uses one Blob at a time.
+function safeFgdbFileName(job){
+ return (job.exportTitle||archiveName(job.title,job.id)).replace(/[\\/:*?"<>|\u0000-\u001f]/g,'_').slice(0,180)+'.zip';
+}
+function localDownloadable(job){return !!job.exportId&&['saved','existing','downloaded'].includes(job.status)}
+function downloadStatus(msg){$('fgdbLocalMessage').textContent=msg}
+function zipError(response){return 'Download failed (HTTP '+response.status+'). Check permissions, token validity and browser network restrictions.'}
+async function getFgdbResponse(job){
+ const u=state.portal.replace(/\/$/,'')+'/sharing/rest/content/items/'+encodeURIComponent(job.exportId)+'/data';
+ const response=await fetch(u,{method:'GET',mode:'cors',redirect:'follow',headers:{Authorization:'Bearer '+state.credential.token},cache:'no-store'});
+ if(!response.ok)throw Error(zipError(response));
+ const type=(response.headers.get('content-type')||'').toLowerCase();
+ if(type.includes('text/html')||type.includes('application/json'))throw Error('ArcGIS returned a web page or JSON instead of an FGDB ZIP. Please open its AGOL item page to troubleshoot access.');
+ return response;
+}
+async function saveFgdbToDirectory(job,handle){
+ const response=await getFgdbResponse(job);
+ if(!response.body)throw Error('Browser does not support streaming this response');
+ const reader=response.body.getReader();
+ const first=await reader.read();
+ if(first.done||!first.value||first.value.length<4||first.value[0]!==80||first.value[1]!==75)throw Error('ArcGIS did not return a ZIP file; nothing was saved');
+ const filename=safeFgdbFileName(job);
+ // Never silently overwrite an existing local archive.
+ try{await handle.getFileHandle(filename,{create:false});throw Error('Local file already exists: '+filename+'. Choose another folder or move the existing file first.')}
+ catch(err){if(err.name!=='NotFoundError')throw err}
+ const file=await handle.getFileHandle(filename,{create:true});
+ const writer=await file.createWritable();
+ let bytes=0;
+ try{
+  await writer.write(first.value);bytes+=first.value.length;
+  const total=Number(response.headers.get('content-length'))||0;
+  let lastProgress=0;
+  while(true){
+   if(fgdbDownloadStop)throw Error('Cancelled by user');
+   const {done,value}=await reader.read();if(done)break;
+   await writer.write(value);bytes+=value.length;
+   if(Date.now()-lastProgress>300){job.localStatus=total?Math.min(99,Math.floor(bytes/total*100))+'%':formatSize(bytes)+' transferred';renderFgdb();lastProgress=Date.now()}
+  }
+  await writer.close();
+ }catch(e){try{await writer.abort()}catch(_){}throw e}finally{reader.releaseLock()}
+ if(bytes<4)throw Error('Empty ZIP received');
+ return {filename,bytes};
+}
+async function saveFgdbThroughBrowser(job){
+ const response=await getFgdbResponse(job);
+ // Blob fallback: one file at a time. Warn for very large FGDB files.
+ const bytes=await response.arrayBuffer();
+ const signature=new Uint8Array(bytes,0,Math.min(4,bytes.byteLength));
+ if(signature[0]!==80||signature[1]!==75)throw Error('ArcGIS response is not a ZIP file');
+ const objectUrl=URL.createObjectURL(new Blob([bytes],{type:'application/zip'}));
+ try{
+  const a=document.createElement('a');a.href=objectUrl;a.download=safeFgdbFileName(job);document.body.appendChild(a);a.click();a.remove();
+  await new Promise(r=>setTimeout(r,750));
+ }finally{setTimeout(()=>URL.revokeObjectURL(objectUrl),60000)}
+ return {filename:safeFgdbFileName(job),bytes:bytes.byteLength,browserTriggered:true};
+}
+async function downloadLocalFgdbs(singleId){
+ if(fgdbDownloading||fgdbRunning||!state.credential)return;
+ const jobs=singleId?fgdbJobs.filter(j=>j.exportId===singleId&&localDownloadable(j)):fgdbJobs.filter(j=>j.localSelected&&localDownloadable(j));
+ if(!jobs.length){downloadStatus('No saved FGDBs selected for local download.');return}
+ // The native folder chooser MUST be invoked directly before any await in this click handler.
+ let directory=null;
+ if(typeof window.showDirectoryPicker==='function'){
+  try{directory=await window.showDirectoryPicker({id:'geogovern-fgdb-archives',mode:'readwrite'})}
+  catch(err){if(err.name==='AbortError'){downloadStatus('Local folder selection cancelled. No downloads started.');return}downloadStatus('Folder access unavailable: '+err.message+'; using browser downloads instead.')}
+ }
+ if(!directory&&jobs.length>1&&!confirm('Your browser will download '+jobs.length+' separate FGDB ZIP files. Allow multiple downloads if prompted. Continue?'))return;
+ fgdbDownloading=true;fgdbDownloadStop=false;let completed=0,failed=0;
+ renderFgdb();downloadStatus('Starting '+jobs.length+' local download(s)…');
+ for(let k=0;k<jobs.length;k++){
+  if(fgdbDownloadStop)break;
+  const job=jobs[k];job.localStatus='Downloading';renderFgdb();
+  downloadStatus('Downloading '+(k+1)+' / '+jobs.length+': '+job.exportTitle);
+  try{
+   const result=directory?await saveFgdbToDirectory(job,directory):await saveFgdbThroughBrowser(job);
+   job.localStatus=result.browserTriggered?'Browser download requested · '+formatSize(result.bytes):'Saved locally · '+formatSize(result.bytes);
+   // Do NOT change AGOL export status: local download has no effect on hosted copy.
+   completed++;
+  }catch(err){job.localStatus='Failed: '+(err.message||String(err));failed++}
+  renderFgdb();
+ }
+ fgdbDownloading=false;
+ downloadStatus('Local downloads: '+completed+' completed/requested, '+failed+' failed'+(fgdbDownloadStop?', stopped early':'')+'. Local files are separate from the AGOL archive items.');renderFgdb();
 }
 function exportFgdbLog(){
- const keys=['source_item_id','title','owner','status','export_item_id','message'];
- const data=fgdbJobs.map(j=>[j.id,j.title,j.owner,j.status,j.exportId||'',j.message||'']);
+ const keys=['source_item_id','source_title','owner','folder','export_title','status','export_item_id','local_download_status','message'];
+ const data=fgdbJobs.map(j=>[j.id,j.title,j.owner,j.sourceFolderLabel||'',j.exportTitle,j.status,j.exportId||'',j.localStatus||'not downloaded',j.message||'']);
  download('geogovern-fgdb-export-log-'+new Date().toISOString().slice(0,10)+'.csv',[keys.map(escCSV).join(','),...data.map(row=>row.map(escCSV).join(','))].join('\r\n'),'text/csv;charset=utf-8');
 }
 $('fgdbPrepare').onclick=prepareFgdb;
 $('fgdbRun').onclick=runFgdb;
 $('fgdbCancel').onclick=()=>{fgdbStop=true;fgdbMessage('Stopping after the current export request…')};
 $('fgdbLog').onclick=exportFgdbLog;
-$('fgdbQueue').addEventListener('click',e=>{const b=e.target.closest('[data-fgdb-download]');if(b)downloadFgdb(b.dataset.fgdbDownload)});
+$('fgdbLocal').onclick=()=>downloadLocalFgdbs();
+$('fgdbLocalStop').onclick=()=>{fgdbDownloadStop=true;downloadStatus('Stopping after the current file…')};
+$('fgdbSelectAll').onchange=e=>{for(const j of fgdbJobs)if(localDownloadable(j))j.localSelected=e.target.checked;renderFgdb()};
+$('fgdbQueue').addEventListener('change',e=>{const b=e.target.closest('[data-fgdb-check]');if(!b)return;const j=fgdbJobs.find(x=>x.id===b.dataset.fgdbCheck);if(j&&localDownloadable(j))j.localSelected=b.checked;renderFgdb()});
+$('fgdbQueue').addEventListener('click',e=>{const b=e.target.closest('[data-fgdb-download]');if(b)downloadLocalFgdbs(b.dataset.fgdbDownload)});
 
 $('clearSelected').onclick=()=>selectMany([...bulkSelected],false);
 $('openBulk').onclick=()=>$('adminPanel').scrollIntoView({behavior:'smooth',block:'start'});
